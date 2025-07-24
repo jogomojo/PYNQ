@@ -24,6 +24,7 @@ from pynq.remote import (
     remote_device_pb2, mmio_pb2, buffer_pb2,
 )
 
+import ipaddress
 import grpc
 
 PYNQ_PORT = 7967
@@ -174,11 +175,15 @@ class RemoteDevice(Device):
             devices = [RemoteDevice(i, ip_list[i]) for i in range(num)]
             return devices
 
-    def __init__(self, index, ip_addr, tag="remote{}"):
+    def __init__(self, index=0, ip_addr=None, port=PYNQ_PORT, tag="remote{}"):
         super().__init__(tag.format(index))
         self.name = tag.format(index)
+        try:
+            ipaddress.ip_address(ip_addr)
+        except ValueError:
+            raise ValueError(f"Invalid IP address format: {ip_addr}")
         self.ip_addr = ip_addr
-        self.port = PYNQ_PORT
+        self.port = port
         self.client = GrpcChannel(self.ip_addr, self.port)
         self._stub = {
             'device': remote_device_pb2_grpc.RemoteDeviceStub(self.client.channel),
@@ -316,7 +321,7 @@ class RemoteDevice(Device):
                     for reg_name in ZU_FPD_SLCR_REG[para]:
                         addr = ZU_FPD_SLCR_REG[para][reg_name]["addr"]
                         f = ZU_FPD_SLCR_REG[para][reg_name]["field"]
-                        Register(addr)[f[0] : f[1]] = ZU_FPD_SLCR_VALUE[width]
+                        Register(addr, device=self)[f[0] : f[1]] = ZU_FPD_SLCR_VALUE[width]
 
             for para in ZU_AXIFM_REG:
                 if para in parameter_dict:
@@ -324,7 +329,7 @@ class RemoteDevice(Device):
                     for reg_name in ZU_AXIFM_REG[para]:
                         addr = ZU_AXIFM_REG[para][reg_name]["addr"]
                         f = ZU_AXIFM_REG[para][reg_name]["field"]
-                        Register(addr)[f[0] : f[1]] = ZU_AXIFM_VALUE[width]
+                        Register(addr, device=self)[f[0] : f[1]] = ZU_AXIFM_VALUE[width]
 
     def gen_cache(self, bitstream, parser=None):
         """ Generates the cache of the metadata even if no download occurred """
