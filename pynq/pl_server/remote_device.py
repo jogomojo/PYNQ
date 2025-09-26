@@ -495,8 +495,13 @@ class RemoteDevice(Device):
             elements = shape
         dtype = np.dtype(dtype)
         size = elements * dtype.itemsize
+
+        # Workaround for XRT v2.17 4KB threshold issue:
+        # Small buffers (<4KB) get 64-bit addresses, large buffers (>=4KB) get 32-bit addresses
+        # Force minimum allocation of 8KB to ensure 32-bit addresses for DMA compatibility
+        actual_size = max(size, 8192)  # 8KB minimum
         response = self._stub['buffer'].allocate(
-            buffer_pb2.AllocateRequest(size=size,
+            buffer_pb2.AllocateRequest(size=actual_size,
                                        dtype=dtype.str,
                                        cacheable=bool(cacheable)
                                        )
