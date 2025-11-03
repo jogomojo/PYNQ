@@ -26,11 +26,13 @@
 #include <mmio.grpc.pb.h>
 #include <buffer.grpc.pb.h>
 #include <gpio.grpc.pb.h>
+#include <xrfclk.grpc.pb.h>
 
 #include "buffer.cc"
 #include "mmio.h"
 #include "device.h"
 #include "gpio.h"
+#include "xrfclk.h"
 
 #include <xrt/xclhal2.h>
 #include <xrt/xrt.h>
@@ -98,6 +100,13 @@ using gpio::GetGpioBasePathResponse;
 using gpio::GetGpioNPinsRequest;
 using gpio::GetGpioNPinsResponse;
 using gpio::Gpio;
+using xrfclk::FindDevicesRequest;
+using xrfclk::FindDevicesResponse;
+using xrfclk::WriteLmkRegsRequest;
+using xrfclk::WriteLmkRegsResponse;
+using xrfclk::WriteLmxRegsRequest;
+using xrfclk::WriteLmxRegsResponse;
+using xrfclk::Xrfclk;
 
 #define DEBUG
 
@@ -853,6 +862,122 @@ public:
     }
 };
 
+class XrfclkImpl final : public Xrfclk::Service
+{
+    /**
+     * @class XrfclkImpl
+     * @brief Implements the gRPC service for managing the xrfclk on RFSoC devices.
+     */
+private:
+    XRFCLK xrfclk_instance_;  // Create instance of Xrfclk class
+
+public:
+    /**
+     * @brief Constructor
+     * Initializes the Xrfclk instance, which triggers device discovery
+     */
+    XrfclkImpl() : xrfclk_instance_() {
+        #ifdef DEBUG
+        std::cout << "XrfclkImpl initialized - devices discovered" << std::endl;
+        #endif
+    }
+
+    /**
+     * @brief Handles the find_devices gRPC request.
+     * Returns the LMK and LMX device names for client validation.
+     * @param context Server context for the request.
+     * @param request FindDevicesRequest message (empty).
+     * @param response FindDevicesResponse message containing lmk_device and lmx_device names.
+     * @return gRPC status.
+     */
+    Status find_devices(ServerContext *context, const FindDevicesRequest *request, FindDevicesResponse *response) override
+    {
+        #ifdef DEBUG
+        std::cout << "Function: find_devices" << std::endl;
+        #endif
+        
+        try {
+            auto device_names = xrfclk_instance_.getDeviceNames();
+            response->set_lmk_device(device_names.first);
+            response->set_lmx_device(device_names.second);
+            
+            #ifdef DEBUG
+            std::cout << "Found LMK device: " << device_names.first << std::endl;
+            std::cout << "Found LMX device: " << device_names.second << std::endl;
+            #endif
+        }
+        catch (const std::exception &e) {
+            std::cerr << "Error finding devices: " << e.what() << std::endl;
+            return grpc::Status(grpc::StatusCode::INTERNAL, e.what());
+        }
+        
+        return grpc::Status::OK;
+    }
+
+    /**
+     * @brief Handles the write_lmk_regs gRPC request.
+     * Writes LMK register values to the device.
+     * num_bytes is automatically determined from device tree.
+     * @param context Server context for the request.
+     * @param request WriteLmkRegsRequest message containing reg_vals.
+     * @param response WriteLmkRegsResponse message (empty).
+     * @return gRPC status.
+     */
+    Status write_lmk_regs(ServerContext *context, const WriteLmkRegsRequest *request, WriteLmkRegsResponse *response) override
+    {
+        #ifdef DEBUG
+        std::cout << "Function: write_lmk_regs, "
+                  << "num_regs=" << request->reg_vals_size()
+                  << std::endl;
+        #endif
+        
+        try {
+            // Convert protobuf repeated field to std::vector
+            std::vector<uint32_t> reg_vals(request->reg_vals().begin(), request->reg_vals().end());
+            
+            // Call the Xrfclk instance method
+            xrfclk_instance_.writeLmkRegs(reg_vals);
+        }
+        catch (const std::exception &e) {
+            std::cerr << "Error writing LMK registers: " << e.what() << std::endl;
+            return grpc::Status(grpc::StatusCode::INTERNAL, e.what());
+        }
+        
+        return grpc::Status::OK;
+    }
+
+    /**
+     * @brief Handles the write_lmx_regs gRPC request.
+     * Writes LMX register values to all LMX devices.
+     * @param context Server context for the request.
+     * @param request WriteLmxRegsRequest message containing reg_vals.
+     * @param response WriteLmxRegsResponse message (empty).
+     * @return gRPC status.
+     */
+    Status write_lmx_regs(ServerContext *context, const WriteLmxRegsRequest *request, WriteLmxRegsResponse *response) override
+    {
+        #ifdef DEBUG
+        std::cout << "Function: write_lmx_regs, "
+                  << "num_regs=" << request->reg_vals_size()
+                  << std::endl;
+        #endif
+        
+        try {
+            // Convert protobuf repeated field to std::vector
+            std::vector<uint32_t> reg_vals(request->reg_vals().begin(), request->reg_vals().end());
+            
+            // Call the Xrfclk instance method - writes to all LMX devices
+            xrfclk_instance_.writeLmxRegs(reg_vals);
+        }
+        catch (const std::exception &e) {
+            std::cerr << "Error writing LMX registers: " << e.what() << std::endl;
+            return grpc::Status(grpc::StatusCode::INTERNAL, e.what());
+        }
+        
+        return grpc::Status::OK;
+    }
+};
+
 
 class RemoteDeviceImpl final : public RemoteDevice::Service
 {
@@ -1018,6 +1143,7 @@ void RunServer(uint16_t port)
     MMIOImpl mmio_service;                  // Create MMIO rpc handler
     BufferImpl buffer_service;              // Create Buffer rpc handler
     GPIOImpl gpio_service;                  // Create Gpio rpc handler
+    XrfclkImpl xrfclk_service;              // Create Xrfclk rpc handler
     remote_device_service.device_name = buffer_service.device_name;
 
     grpc::EnableDefaultHealthCheckService(true);
@@ -1028,6 +1154,7 @@ void RunServer(uint16_t port)
     builder.RegisterService(&mmio_service);
     builder.RegisterService(&buffer_service);
     builder.RegisterService(&gpio_service);
+    builder.RegisterService(&xrfclk_service);
 
     std::unique_ptr<Server> server(builder.BuildAndStart());
     std::cout << "Server listening on " << server_address << std::endl;

@@ -18,6 +18,9 @@ get_filename_component(buffer_proto_path "${buffer_proto}" PATH)
 get_filename_component(gpio_proto "../protos/gpio.proto" ABSOLUTE)
 get_filename_component(gpio_proto_path "${gpio_proto}" PATH)
 
+get_filename_component(xrfclk_proto "../protos/xrfclk.proto" ABSOLUTE)
+get_filename_component(xrfclk_proto_path "${xrfclk_proto}" PATH)
+
 # Generated sources
 set(remote_device_proto_srcs "${CMAKE_CURRENT_BINARY_DIR}/remote_device.pb.cc")
 set(remote_device_proto_hdrs "${CMAKE_CURRENT_BINARY_DIR}/remote_device.pb.h")
@@ -39,11 +42,17 @@ set(gpio_proto_hdrs "${CMAKE_CURRENT_BINARY_DIR}/gpio.pb.h")
 set(gpio_grpc_srcs "${CMAKE_CURRENT_BINARY_DIR}/gpio.grpc.pb.cc")
 set(gpio_grpc_hdrs "${CMAKE_CURRENT_BINARY_DIR}/gpio.grpc.pb.h")
 
+set(xrfclk_proto_srcs "${CMAKE_CURRENT_BINARY_DIR}/xrfclk.pb.cc")
+set(xrfclk_proto_hdrs "${CMAKE_CURRENT_BINARY_DIR}/xrfclk.pb.h")
+set(xrfclk_grpc_srcs "${CMAKE_CURRENT_BINARY_DIR}/xrfclk.grpc.pb.cc")
+set(xrfclk_grpc_hdrs "${CMAKE_CURRENT_BINARY_DIR}/xrfclk.grpc.pb.h")
+
 add_custom_command(
   OUTPUT "${remote_device_proto_srcs}" "${remote_device_proto_hdrs}" "${remote_device_grpc_srcs}" "${remote_device_grpc_hdrs}" 
   "${mmio_proto_srcs}" "${mmio_proto_hdrs}" "${mmio_grpc_srcs}" "${mmio_grpc_hdrs}"
   "${buffer_proto_srcs}" "${buffer_proto_hdrs}" "${buffer_grpc_srcs}" "${buffer_grpc_hdrs}"
   "${gpio_proto_srcs}" "${gpio_proto_hdrs}" "${gpio_grpc_srcs}" "${gpio_grpc_hdrs}"
+  "${xrfclk_proto_srcs}" "${xrfclk_proto_hdrs}" "${xrfclk_grpc_srcs}" "${xrfclk_grpc_hdrs}"
   COMMAND ${_PROTOBUF_PROTOC}
   ARGS --grpc_out "${CMAKE_CURRENT_BINARY_DIR}"
   --cpp_out "${CMAKE_CURRENT_BINARY_DIR}"
@@ -53,7 +62,8 @@ add_custom_command(
   "${mmio_proto}"
   "${buffer_proto}"
   "${gpio_proto}"
-  DEPENDS "${remote_device_proto}" "${mmio_proto}" "${buffer_proto}" "${gpio_proto}")
+  "${xrfclk_proto}"
+  DEPENDS "${remote_device_proto}" "${mmio_proto}" "${buffer_proto}" "${xrfclk_proto}")
 
 message(STATUS "CMAKE CURRENT DIR = ${CMAKE_CURRENT_SOURCE_DIR}")
 # Change to whatever the Petalinux project path - will need to change this at some point
@@ -130,17 +140,26 @@ add_library(gpio_grpc_proto
   ${gpio_proto_srcs}
   ${gpio_proto_hdrs})
 
+  # xrfclk_grpc_proto
+add_library(xrfclk_grpc_proto
+  ${xrfclk_grpc_srcs}
+  ${xrfclk_grpc_hdrs}
+  ${xrfclk_proto_srcs}
+  ${xrfclk_proto_hdrs})
+
 add_library(pynq
   buffer.cc
   mmio.cc
   device.cc
   gpio.cc
+  xrfclk.cc
 )
 
 target_link_libraries(remote_device_grpc_proto
   mmio_grpc_proto
   buffer_grpc_proto
   gpio_grpc_proto
+  xrfclk_grpc_proto
   ${_REFLECTION}
   ${_GRPC_GRPCPP}
   ${_PROTOBUF_LIBPROTOBUF})
@@ -155,6 +174,7 @@ foreach(_target
     mmio_grpc_proto
     buffer_grpc_proto
     gpio_grpc_proto
+    xrfclk_grpc_proto
     ${_REFLECTION}
     ${_GRPC_GRPCPP}
     ${_PROTOBUF_LIBPROTOBUF}
