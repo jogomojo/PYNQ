@@ -516,6 +516,28 @@ class RemoteDevice(Device):
         )
         return ar
             
+    def get_memory(self, desc):
+        return RemoteMemory(self, desc)
+
+
+class RemoteMemory:
+
+    def __init__(self, device, desc):
+        self.idx = desc["idx"]
+        self.size = desc["size"]
+        self.base_address = desc["base_address"]
+        self.desc = desc
+        self.device = device
+        self._mmio = None
+
+    @property
+    def mmio(self):
+        if self._mmio is None:
+            import pynq
+
+            self._mmio = pynq.MMIO(self.base_address, self.size, device=self.device)
+        return self._mmio
+
 
 class RemoteGPIO:
     """Internal Helper class to wrap Linux's GPIO Sysfs API.
