@@ -100,8 +100,7 @@ ifeq ($$(FPGA_MANAGER_$1),)
 	FPGA_MANAGER_$1 := 1
 endif
 
-# RFSoC defaults: honour an explicit RFSoC_<board> := 1 if a board sets it,
-# otherwise derive from REMOTE_PACKAGES_<board> membership (rfdc => RFSoC), else 0.
+# If the board .spec file has rfdc as a remote package we infer it's an RFSoC board
 ifeq ($$(RFSoC_$1),)
 	RFSoC_$1 := $$(if $$(filter rfdc,$$(REMOTE_PACKAGES_$1)),1,0)
 endif
