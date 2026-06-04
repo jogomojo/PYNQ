@@ -8,7 +8,6 @@ Mirrors the classic PYNQ xrfdc API using data-driven property generation.
 
 from . import xrfdc_pb2, xrfdc_pb2_grpc
 from pynq.overlay import DefaultIP
-from pynq import GPIO
 
 # ============================================================================
 # Constants (matching C driver / classic xrfdc)
@@ -779,24 +778,6 @@ class RFdc(DefaultIP):
               "xilinx.com:ip:usp_rf_data_converter:2.4",
               "xilinx.com:ip:usp_rf_data_converter:2.3"]
 
-    # Board-specific hardware configurations.
-    # lmk_freq: master reference clock frequency (MHz) — fixed per board model.
-    # lmk_gpio_offsets: GPIO pin offsets from PS GPIO base for LMK clock control
-    #   (only boards that need GPIO-based LMK reset include this).
-    # lmx_freq is NOT listed here — it is read from the HWH RefClkFreq
-    # parameter of the first enabled tile, which reflects exactly what the
-    # bitstream was compiled for.
-    BOARD_CONFIGS = {
-        'RFSoC4x2': {
-            'lmk_freq': 245.76,
-            'lmk_gpio_offsets': {'reset': 7, 'clk_sel0': 8, 'clk_sel1': 12},
-        },
-        'RFSoC2x2': {'lmk_freq': 122.88},
-        'ZCU111':   {'lmk_freq': 122.88},
-        'ZCU208':   {'lmk_freq': 245.76},
-        'ZCU216':   {'lmk_freq': 245.76},
-    }
-
     def __init__(self, description, clock_config=None, enabled_tiles=None):
         if 'parameters' not in description:
             raise ValueError("RFdc requires HWH parameters in description")
@@ -835,18 +816,6 @@ class RFdc(DefaultIP):
         populate_config(self.config_pb, description['parameters'])
         self.config_pb.base_addr = base_addr
 
-        # Clock initialization (mirrors classic boot.py)
-        from . import xrfclk
-        from time import sleep
-        board_name = self.device.name
-        board_cfg = self.BOARD_CONFIGS.get(board_name, {})
-        lmk_freq = board_cfg.get('lmk_freq', 245.76)
-        lmx_freq = self._ref_clk_freq_from_hwh()
-        if 'lmk_gpio_offsets' in board_cfg:
-            self._early_init_lmk_gpio(board_cfg['lmk_gpio_offsets'])
-        xrfclk.set_ref_clks(lmk_freq=lmk_freq, lmx_freq=lmx_freq, device=self.device)
-        sleep(0.5)
-
         # Initialize remote instance
         req = xrfdc_pb2.CfgInitializeRequest(config=self.config_pb, size=size)
         resp = self._stub.CfgInitialize(req)
@@ -858,22 +827,7 @@ class RFdc(DefaultIP):
         self.dac_tiles = [RFdcDacTile(self, i) for i in range(4)]
 
         # Start tiles
-        self.startup_tiles(ref_clk_freq=lmx_freq)
-
-    def _early_init_lmk_gpio(self, gpio_offsets):
-        """Initialize LMK clock control GPIOs. Pin offsets from BOARD_CONFIGS."""
-        from pynq.pl_server.remote_device import RemoteGPIO
-        base_path = RemoteGPIO.get_gpio_base_path(device=self.device)
-        gpio_base = int(base_path.rstrip('/').split('gpiochip')[-1])
-
-        lmk_reset = GPIO(gpio_base + gpio_offsets['reset'], 'out', device=self.device)
-        lmk_clk_sel0 = GPIO(gpio_base + gpio_offsets['clk_sel0'], 'out', device=self.device)
-        lmk_clk_sel1 = GPIO(gpio_base + gpio_offsets['clk_sel1'], 'out', device=self.device)
-
-        lmk_reset.write(1)
-        lmk_reset.write(0)
-        lmk_clk_sel0.write(0)
-        lmk_clk_sel1.write(0)
+        self.startup_tiles()
 
     def _detect_enabled_tiles(self):
         """Auto-detect which tiles are enabled from HWH configuration."""
@@ -887,31 +841,24 @@ class RFdc(DefaultIP):
                     enabled['adc'].append(i)
         return enabled
 
-    def _ref_clk_freq_from_hwh(self):
-        """Read reference clock frequency from HWH tile configuration."""
-        for tc in self.config_pb.adc_tile_config:
-            if tc.enable and tc.ref_clk_freq > 0:
-                return tc.ref_clk_freq
-        for tc in self.config_pb.dac_tile_config:
-            if tc.enable and tc.ref_clk_freq > 0:
-                return tc.ref_clk_freq
-        return 491.52
+    def startup_tiles(self, enabled_tiles=None):
+        """Configure and start the enabled RFDC tiles from the HWH clock settings.
 
-    def startup_tiles(self, ref_clk_freq=491.52, enabled_tiles=None):
-        """Configure and start RFDC tiles. Sampling rate = 10x ref clock."""
+        ref_clk_freq is MHz; sampling_rate is GHz and DynamicPLLConfig wants MSPS.
+        """
         from time import sleep
         if enabled_tiles is None:
             enabled_tiles = self._detect_enabled_tiles()
-        samp_rate = ref_clk_freq * 10
 
         for tile_id in enabled_tiles.get('dac', []):
             tile = self.dac_tiles[tile_id]
+            tc = self.config_pb.dac_tile_config[tile_id]
             try:
                 tile.ShutDown()
                 sleep(0.2)
             except Exception:
                 pass
-            tile.DynamicPLLConfig(1, ref_clk_freq, samp_rate)
+            tile.DynamicPLLConfig(1, tc.ref_clk_freq, tc.sampling_rate * 1000)
             try:
                 tile.SetupFIFO(True)
             except Exception:
@@ -919,12 +866,13 @@ class RFdc(DefaultIP):
 
         for tile_id in enabled_tiles.get('adc', []):
             tile = self.adc_tiles[tile_id]
+            tc = self.config_pb.adc_tile_config[tile_id]
             try:
                 tile.ShutDown()
                 sleep(0.2)
             except Exception:
                 pass
-            tile.DynamicPLLConfig(1, ref_clk_freq, samp_rate)
+            tile.DynamicPLLConfig(1, tc.ref_clk_freq, tc.sampling_rate * 1000)
             try:
                 tile.SetupFIFO(True)
             except Exception:
