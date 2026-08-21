@@ -8,23 +8,38 @@ import shutil
 import importlib
 
 
-@pytest.fixture(params=[pynq.ps.ZU_ARCH, pynq.ps.ZYNQ_ARCH])
+platform_arch = {
+    'zynq': pynq.ps.ZYNQ_ARCH,
+    'zynqmp': pynq.ps.ZU_ARCH,
+    'versal': pynq.ps.ZU_ARCH
+}
+
+current_platform = None
+
+
+@pytest.fixture(params=list(platform_arch))
 def gpio(request):
+    global current_platform
     old_arch = pynq.ps.CPU_ARCH
-    pynq.ps.CPU_ARCH = request.param
+    old_is_versal = pynq.ps._is_versal_host
+    current_platform = request.param
+    pynq.ps.CPU_ARCH = platform_arch[current_platform]
+    pynq.ps._is_versal_host = lambda: current_platform == 'versal'
     new_gpio = importlib.reload(pynq.gpio)
     yield new_gpio
     pynq.ps.CPU_ARCH = old_arch
+    pynq.ps._is_versal_host = old_is_versal
 
 
 expected_min_pins = {
-    pynq.ps.ZYNQ_ARCH: 54,
-    pynq.ps.ZU_ARCH: 78
+    'zynq': 54,
+    'zynqmp': 78,
+    'versal': 52
 }
 
 
 def test_gpio_offset(gpio):
-    assert gpio.GPIO._GPIO_MIN_USER_PIN == expected_min_pins[pynq.ps.CPU_ARCH]
+    assert gpio.GPIO._GPIO_MIN_USER_PIN == expected_min_pins[current_platform]
 
 
 def test_gpio_warning():
@@ -44,9 +59,16 @@ ZU_CHIPS = [
     (120, 32, 'ti-gpio')
 ]
 
+
+VERSAL_CHIPS = [
+    (340, 96, 'pmc_gpio'),
+    (120, 32, 'ti-gpio')
+]
+
 chip_dict = {
-    pynq.ps.ZYNQ_ARCH: ZYNQ_CHIPS,
-    pynq.ps.ZU_ARCH: ZU_CHIPS
+    'zynq': ZYNQ_CHIPS,
+    'zynqmp': ZU_CHIPS,
+    'versal': VERSAL_CHIPS
 }
 
 
@@ -71,7 +93,7 @@ def unexport_hook(f):
 
 def _create_gpiofs(fs, chips=None):
     if chips is None:
-        chips = chip_dict[pynq.ps.CPU_ARCH]
+        chips = chip_dict[current_platform]
     fs.create_file('/sys/class/gpio/export', side_effect=export_hook)
     fs.create_file('/sys/class/gpio/unexport', side_effect=unexport_hook)
     os.mkdir('/sys/class/gpio/other_dir')

@@ -4,7 +4,7 @@
 import os
 import warnings
 import weakref
-from .ps import CPU_ARCH, ZU_ARCH, ZYNQ_ARCH
+from .ps import CPU_ARCH, ZU_ARCH, ZYNQ_ARCH, _is_versal_host
 
 
 class _GPIO:
@@ -137,7 +137,9 @@ class GPIO:
     if CPU_ARCH == ZYNQ_ARCH:
         _GPIO_MIN_USER_PIN = 54
     elif CPU_ARCH == ZU_ARCH:
-        _GPIO_MIN_USER_PIN = 78
+        # The offset is the controller's MIO pin count. Versal is aarch64 too,
+        # but its PMC GPIO has 52 MIO pins ahead of the EMIO range, not 78.
+        _GPIO_MIN_USER_PIN = 52 if _is_versal_host() else 78
     else:
         warnings.warn("Pynq does not support the CPU Architecture: {}"
                       .format(CPU_ARCH), ResourceWarning)
@@ -244,6 +246,7 @@ class GPIO:
         else:
             valid_labels.append('zynqmp_gpio')
             valid_labels.append('zynq_gpio')
+            valid_labels.append('pmc_gpio')
 
         for root, dirs, files in os.walk('/sys/class/gpio'):
             for name in dirs:
