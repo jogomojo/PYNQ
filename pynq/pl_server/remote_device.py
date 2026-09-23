@@ -11,7 +11,7 @@ from pynqmetadata.frontends import Metadata
 from .device import Device
 from .embedded_device import (
     _unify_dictionaries, DEFAULT_XCLBIN, CacheMetadataError,
-    BitstreamHandler, bit2bin,
+    BitstreamHandler, bit2bin, _create_xclbin,
     ZU_FPD_SLCR_REG, ZU_FPD_SLCR_VALUE, ZU_AXIFM_REG, ZU_AXIFM_VALUE, 
 )
 from .global_state import (
@@ -74,8 +74,9 @@ class RemoteBitstreamHandler(BitstreamHandler):
 
         The returned object contains all of the data that
         was processed from both the HWH and Xclbin metadata
-        attached to the object. For remote devices, uses
-        default XCLBIN data instead of creating synthetic data.
+        attached to the object. Prefers a sidecar .xclbin, then a synthetic
+        xclbin from the design memories (when xclbinutil is available), then
+        the default XCLBIN.
 
         Parameters
         ----------
@@ -92,7 +93,7 @@ class RemoteBitstreamHandler(BitstreamHandler):
         from .xclbin_parser import XclBin
 
         hwh_data = self.get_hwh_data()
-        xclbin_data = DEFAULT_XCLBIN
+        xclbin_data = self.get_xclbin_data()
         is_xsa = self.is_xsa()
         self._xsa_bitstream_file = None
         if hwh_data is not None and not is_xsa:
@@ -107,15 +108,21 @@ class RemoteBitstreamHandler(BitstreamHandler):
                 except:
                     raise RuntimeError(f"Unable to parse metadata")
 
+            if xclbin_data is None:
+                xclbin_data = _synthetic_xclbin(parser.mem_dict)
             xclbin_parser = XclBin(xclbin_data=xclbin_data)
             _unify_dictionaries(parser, xclbin_parser)
+            _annotate_mem_indices(parser.mem_dict)
 
             if not partial:
                 parser.refresh_hierarchy_dict()
         elif is_xsa:
             parser = RuntimeMetadataParser(Metadata(input=self._filepath))
+            if xclbin_data is None:
+                xclbin_data = _synthetic_xclbin(parser.mem_dict)
             xclbin_parser = XclBin(xclbin_data=xclbin_data)
             _unify_dictionaries(parser, xclbin_parser)
+            _annotate_mem_indices(parser.mem_dict)
             parser.refresh_hierarchy_dict()
             self._xsa_bitstream_file = parser.xsa._primaryProgrammableImagePath()
         else:
@@ -157,6 +164,34 @@ def _get_bitstream_handler(bitfile_name):
     if filetype not in _bitstream_handlers:
         raise RuntimeError("Unknown file format")
     return _bitstream_handlers[filetype](bitfile_name)
+
+
+def _annotate_mem_indices(mem_dict):
+    """Fill XRT memory indices to match EmbeddedDevice._ip_to_topology.
+
+    Slot 0 is the synthetic PSDDR bank. Remaining used memories are numbered
+    from 1 in iteration order. Existing idx/base_address/size from an xclbin
+    are left unchanged.
+    """
+    next_idx = 1
+    for v in mem_dict.values():
+        assigned = next_idx
+        next_idx += 1
+        if v.get("dfx"):
+            continue
+        v.setdefault("idx", assigned)
+        if "base_address" not in v and "phys_addr" in v:
+            v["base_address"] = v["phys_addr"]
+        if "size" not in v and "addr_range" in v:
+            v["size"] = v["addr_range"]
+        v.setdefault("streaming", False)
+
+
+def _synthetic_xclbin(mem_dict):
+    try:
+        return _create_xclbin(mem_dict)
+    except Exception:
+        return DEFAULT_XCLBIN
 
 class RemoteDevice(Device):
     """Device class for interacting with remote PYNQ devices via gRPC
@@ -389,6 +424,23 @@ class RemoteDevice(Device):
         """
         return RemoteMMIO(self._stub['mmio'], address, length)
 
+    def get_memory(self, description):
+        if description.get("streaming"):
+            raise RuntimeError("Streaming memories are not supported on RemoteDevice")
+        return RemoteMemory(self, description)
+
+    def get_memory_by_idx(self, idx):
+        for m in self.mem_dict.values():
+            if m.get("idx") == idx:
+                return self.get_memory(m)
+        raise RuntimeError("Could not find memory")
+
+    def get_memory_by_name(self, name):
+        for m in self.mem_dict.values():
+            if m.get("tag") == name or m.get("fullpath") == name:
+                return self.get_memory(m)
+        raise RuntimeError("Could not find memory")
+
     def download(self, bitstream, parser=None):
         """Download bitstream to the remote FPGA device
 
@@ -436,6 +488,15 @@ class RemoteDevice(Device):
         self.write_file(BS_FPGA_MAN, bitstream.binfile_name.encode())
 
         self.set_axi_port_width(parser)
+        xclbin_data = getattr(parser, "xclbin_data", None) if parser is not None else None
+        if xclbin_data:
+            xclbin_path = FIRMWARE + "loaded.xclbin"
+            self.write_file(xclbin_path, xclbin_data)
+            response = self._stub['buffer'].load_xclbin(
+                buffer_pb2.LoadXclbinRequest(file_path=xclbin_path)
+            )
+            if getattr(response, "msg", None):
+                warnings.warn(f"Remote XRT xclbin load failed: {response.msg}")
         super().post_download(bitstream, parser, self.name)
     
     def initial_global_state_file_boot_check(self):
@@ -480,7 +541,7 @@ class RemoteDevice(Device):
                         "don't match."
                     )
 
-    def allocate(self, shape, dtype, cacheable=1, **kwargs):
+    def allocate(self, shape, dtype, cacheable=1, idx=0, **kwargs):
         """Allocate memory buffer on the remote device
 
         Parameters
@@ -492,6 +553,9 @@ class RemoteDevice(Device):
         cacheable : int, optional
             Whether buffer should be cacheable (0=non-cacheable, 1=cacheable).
             For remote buffers, this is always set to 1.
+        idx : int, optional
+            XRT memory group index. 0 is PS DDR; other values select
+            additional memories described by the overlay mem_dict.
         **kwargs
             Additional keyword arguments (currently unused)
         """
@@ -507,7 +571,8 @@ class RemoteDevice(Device):
         response = self._stub['buffer'].allocate(
             buffer_pb2.AllocateRequest(size=size,
                                        dtype=dtype.str,
-                                       cacheable=bool(cacheable)
+                                       cacheable=bool(cacheable),
+                                       idx=int(idx)
                                        )
         )
         if not response:
@@ -522,6 +587,42 @@ class RemoteDevice(Device):
         )
         return ar
             
+
+class RemoteMemory:
+    """Memory bank on a remote device.
+
+    Mirrors XrtMemory: overlay attributes such as ``ol.noc_lpddr0`` resolve
+    to this object, and ``allocate(target=...)`` allocates in that XRT group
+    via gRPC.
+    """
+
+    def __init__(self, device, desc):
+        self.device = device
+        self.desc = desc
+        self.idx = desc["idx"]
+        self.size = desc.get("size", desc.get("addr_range"))
+        self.base_address = desc.get("base_address", desc.get("phys_addr"))
+        self._mmio = None
+
+    def allocate(self, shape, dtype, **kwargs):
+        buf = self.device.allocate(shape, dtype, idx=self.idx, **kwargs)
+        buf.memory = self
+        return buf
+
+    def read(self, address):
+        return self.mmio.read(address)
+
+    def write(self, address, value):
+        return self.mmio.write(address, value)
+
+    @property
+    def mmio(self):
+        if self._mmio is None:
+            from pynq import MMIO
+
+            self._mmio = MMIO(self.base_address, self.size, device=self.device)
+        return self._mmio
+
 
 class RemoteGPIO:
     """Internal Helper class to wrap Linux's GPIO Sysfs API.

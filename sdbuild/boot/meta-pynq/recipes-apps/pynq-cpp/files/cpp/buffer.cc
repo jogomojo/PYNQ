@@ -7,7 +7,7 @@ XrtBufferManager::XrtBufferManager(const xrt::device &device_p) : device(device_
     device=device_p;
 }
 
-xrt::bo XrtBufferManager::allocate_bo(size_t size, bool cacheable)
+xrt::bo XrtBufferManager::allocate_bo(size_t size, bool cacheable, xrt::memory_group memory_grp)
 {
     try
         {
@@ -16,7 +16,6 @@ xrt::bo XrtBufferManager::allocate_bo(size_t size, bool cacheable)
             {
                 buffer_flags = xrt::bo::flags::cacheable; // or cacheable     
             }
-            xrt::memory_group memory_grp = 0; // uint32 obtained from kernel agrument?
             xrt::bo buffer = xrt::bo(device, size, buffer_flags, memory_grp);
             return buffer;
         }
@@ -107,12 +106,12 @@ void XrtBufferManager::invalidate_bo(xrt::bo &bo)
     }
 }
 
-BufferRemote::BufferRemote(const size_t size, const std::string &dtype, XrtBufferManager &xrt_manager, bool cacheable)
+BufferRemote::BufferRemote(const size_t size, const std::string &dtype, XrtBufferManager &xrt_manager, bool cacheable, xrt::memory_group memory_grp)
     : size_(0), manager_(xrt_manager), freed_(false), cacheable_(false)
 {
     cacheable_ = cacheable;
     size_ = size;
-    bo_ = manager_.allocate_bo(size_, cacheable_);
+    bo_ = manager_.allocate_bo(size_, cacheable_, memory_grp);
     if (!bo_)
     {
         throw std::runtime_error("Failed to allocate buffer object.");

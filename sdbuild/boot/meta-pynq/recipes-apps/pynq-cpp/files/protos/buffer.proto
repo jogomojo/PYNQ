@@ -11,6 +11,7 @@ service RemoteBuffer {
     rpc physical_address(AddressRequest) returns (AddressResponse) {}
     rpc virtual_address(AddressRequest) returns (AddressResponse) {}
     rpc cacheable(CacheableRequest) returns (CacheableResponse) {}
+    rpc load_xclbin(LoadXclbinRequest) returns (LoadXclbinResponse) {}
 }
 
 message CacheableRequest {
@@ -51,6 +52,15 @@ message AllocateRequest {
     int32 size = 1;
     string dtype = 2;
     bool cacheable = 3;
+    uint32 idx = 4;
+}
+
+message LoadXclbinRequest {
+    string file_path = 1;
+}
+
+message LoadXclbinResponse {
+    optional string msg = 2;
 }
 
 message AllocateResponse {

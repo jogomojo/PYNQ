@@ -84,6 +84,11 @@ class RemoteBufferStub(object):
                 request_serializer=buffer__pb2.CacheableRequest.SerializeToString,
                 response_deserializer=buffer__pb2.CacheableResponse.FromString,
                 _registered_method=True)
+        self.load_xclbin = channel.unary_unary(
+                '/buffer.RemoteBuffer/load_xclbin',
+                request_serializer=buffer__pb2.LoadXclbinRequest.SerializeToString,
+                response_deserializer=buffer__pb2.LoadXclbinResponse.FromString,
+                _registered_method=True)
 
 
 class RemoteBufferServicer(object):
@@ -143,6 +148,12 @@ class RemoteBufferServicer(object):
         context.set_details('Method not implemented!')
         raise NotImplementedError('Method not implemented!')
 
+    def load_xclbin(self, request, context):
+        """Missing associated documentation comment in .proto file."""
+        context.set_code(grpc.StatusCode.UNIMPLEMENTED)
+        context.set_details('Method not implemented!')
+        raise NotImplementedError('Method not implemented!')
+
 
 def add_RemoteBufferServicer_to_server(servicer, server):
     rpc_method_handlers = {
@@ -190,6 +201,11 @@ def add_RemoteBufferServicer_to_server(servicer, server):
                     servicer.cacheable,
                     request_deserializer=buffer__pb2.CacheableRequest.FromString,
                     response_serializer=buffer__pb2.CacheableResponse.SerializeToString,
+            ),
+            'load_xclbin': grpc.unary_unary_rpc_method_handler(
+                    servicer.load_xclbin,
+                    request_deserializer=buffer__pb2.LoadXclbinRequest.FromString,
+                    response_serializer=buffer__pb2.LoadXclbinResponse.SerializeToString,
             ),
     }
     generic_handler = grpc.method_handlers_generic_handler(
@@ -435,6 +451,33 @@ class RemoteBuffer(object):
             '/buffer.RemoteBuffer/cacheable',
             buffer__pb2.CacheableRequest.SerializeToString,
             buffer__pb2.CacheableResponse.FromString,
+            options,
+            channel_credentials,
+            insecure,
+            call_credentials,
+            compression,
+            wait_for_ready,
+            timeout,
+            metadata,
+            _registered_method=True)
+
+    @staticmethod
+    def load_xclbin(request,
+            target,
+            options=(),
+            channel_credentials=None,
+            call_credentials=None,
+            insecure=False,
+            compression=None,
+            wait_for_ready=None,
+            timeout=None,
+            metadata=None):
+        return grpc.experimental.unary_unary(
+            request,
+            target,
+            '/buffer.RemoteBuffer/load_xclbin',
+            buffer__pb2.LoadXclbinRequest.SerializeToString,
+            buffer__pb2.LoadXclbinResponse.FromString,
             options,
             channel_credentials,
             insecure,

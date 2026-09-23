@@ -60,6 +60,8 @@ using buffer::FreeBufferRequest;
 using buffer::FreeBufferResponse;
 using buffer::InvalidateRequest;
 using buffer::InvalidateResponse;
+using buffer::LoadXclbinRequest;
+using buffer::LoadXclbinResponse;
 using buffer::RemoteBuffer;
 using grpc::Server;
 using grpc::ServerBuilder;
@@ -191,12 +193,18 @@ private:
         std::cout << "Allocate Request Received: "
                   << "size=" << static_cast<size_t>(request->size()) << ", "
                   << "dtype=" << request->dtype() << ", "
-                  << "cacheable=" << (request->cacheable() ? "true" : "false")
+                  << "cacheable=" << (request->cacheable() ? "true" : "false") << ", "
+                  << "idx=" << request->idx()
                   << std::endl;
         #endif
         try
         {
-            auto buffer = std::make_unique<BufferRemote>(static_cast<size_t>(request->size()), request->dtype(), manager, request->cacheable());
+            auto buffer = std::make_unique<BufferRemote>(
+                static_cast<size_t>(request->size()),
+                request->dtype(),
+                manager,
+                request->cacheable(),
+                static_cast<xrt::memory_group>(request->idx()));
             std::string buffer_id = generate_unique_id(buffer);
             buffers_[buffer_id] = std::move(buffer);
             response->set_buffer_id(buffer_id);
@@ -207,6 +215,24 @@ private:
         }
         return grpc::Status::OK;
     }
+
+    Status load_xclbin(ServerContext *context, const LoadXclbinRequest *request, LoadXclbinResponse *response) override
+    {
+        #ifdef DEBUG
+        std::cout << "LoadXclbin Request Received: " << request->file_path() << std::endl;
+        #endif
+        try
+        {
+            device.load_xclbin(request->file_path());
+        }
+        catch (const std::exception &e)
+        {
+            std::cerr << "load_xclbin failed: " << e.what() << std::endl;
+            response->set_msg(e.what());
+        }
+        return grpc::Status::OK;
+    }
+
     /**
      * @brief Handles the write operation for the remote server.
      *

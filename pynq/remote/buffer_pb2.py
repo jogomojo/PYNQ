@@ -14,7 +14,7 @@ _sym_db = _symbol_database.Default()
 
 
 
-DESCRIPTOR = _descriptor_pool.Default().AddSerializedFile(b'\n\x0c\x62uffer.proto\x12\x06\x62uffer\"%\n\x10\x43\x61\x63heableRequest\x12\x11\n\tbuffer_id\x18\x01 \x01(\t\"S\n\x11\x43\x61\x63heableResponse\x12\x10\n\x03msg\x18\x02 \x01(\tH\x00\x88\x01\x01\x12\x16\n\tcacheable\x18\x03 \x01(\x08H\x01\x88\x01\x01\x42\x06\n\x04_msgB\x0c\n\n_cacheable\"#\n\x0e\x41\x64\x64ressRequest\x12\x11\n\tbuffer_id\x18\x01 \x01(\t\"M\n\x0f\x41\x64\x64ressResponse\x12\x10\n\x03msg\x18\x02 \x01(\tH\x00\x88\x01\x01\x12\x14\n\x07\x61\x64\x64ress\x18\x03 \x01(\x04H\x01\x88\x01\x01\x42\x06\n\x04_msgB\n\n\x08_address\"&\n\x11InvalidateRequest\x12\x11\n\tbuffer_id\x18\x01 \x01(\t\".\n\x12InvalidateResponse\x12\x10\n\x03msg\x18\x02 \x01(\tH\x00\x88\x01\x01\x42\x06\n\x04_msg\"!\n\x0c\x46lushRequest\x12\x11\n\tbuffer_id\x18\x01 \x01(\t\")\n\rFlushResponse\x12\x10\n\x03msg\x18\x02 \x01(\tH\x00\x88\x01\x01\x42\x06\n\x04_msg\"A\n\x0f\x41llocateRequest\x12\x0c\n\x04size\x18\x01 \x01(\x05\x12\r\n\x05\x64type\x18\x02 \x01(\t\x12\x11\n\tcacheable\x18\x03 \x01(\x08\"R\n\x10\x41llocateResponse\x12\x10\n\x03msg\x18\x02 \x01(\tH\x00\x88\x01\x01\x12\x16\n\tbuffer_id\x18\x03 \x01(\tH\x01\x88\x01\x01\x42\x06\n\x04_msgB\x0c\n\n_buffer_id\"Q\n\x12\x42ufferWriteRequest\x12\x11\n\tbuffer_id\x18\x01 \x01(\t\x12\x0c\n\x04\x64\x61ta\x18\x02 \x01(\x0c\x12\r\n\x05start\x18\x03 \x01(\x05\x12\x0b\n\x03\x65nd\x18\x04 \x01(\x05\"/\n\x13\x42ufferWriteResponse\x12\x10\n\x03msg\x18\x02 \x01(\tH\x00\x88\x01\x01\x42\x06\n\x04_msg\"B\n\x11\x42ufferReadRequest\x12\x11\n\tbuffer_id\x18\x01 \x01(\t\x12\r\n\x05start\x18\x02 \x01(\x05\x12\x0b\n\x03\x65nd\x18\x03 \x01(\x05\"J\n\x12\x42ufferReadResponse\x12\x10\n\x03msg\x18\x02 \x01(\tH\x00\x88\x01\x01\x12\x11\n\x04\x64\x61ta\x18\x03 \x01(\x0cH\x01\x88\x01\x01\x42\x06\n\x04_msgB\x07\n\x05_data\"&\n\x11\x46reeBufferRequest\x12\x11\n\tbuffer_id\x18\x01 \x01(\t\".\n\x12\x46reeBufferResponse\x12\x10\n\x03msg\x18\x02 \x01(\tH\x00\x88\x01\x01\x42\x06\n\x04_msg2\xef\x04\n\x0cRemoteBuffer\x12?\n\x08\x61llocate\x12\x17.buffer.AllocateRequest\x1a\x18.buffer.AllocateResponse\"\x00\x12\x44\n\x05write\x12\x1a.buffer.BufferWriteRequest\x1a\x1b.buffer.BufferWriteResponse\"\x00(\x01\x12\x41\n\x04read\x12\x19.buffer.BufferReadRequest\x1a\x1a.buffer.BufferReadResponse\"\x00\x30\x01\x12\x45\n\nfreebuffer\x12\x19.buffer.FreeBufferRequest\x1a\x1a.buffer.FreeBufferResponse\"\x00\x12\x36\n\x05\x66lush\x12\x14.buffer.FlushRequest\x1a\x15.buffer.FlushResponse\"\x00\x12\x45\n\ninvalidate\x12\x19.buffer.InvalidateRequest\x1a\x1a.buffer.InvalidateResponse\"\x00\x12\x45\n\x10physical_address\x12\x16.buffer.AddressRequest\x1a\x17.buffer.AddressResponse\"\x00\x12\x44\n\x0fvirtual_address\x12\x16.buffer.AddressRequest\x1a\x17.buffer.AddressResponse\"\x00\x12\x42\n\tcacheable\x12\x18.buffer.CacheableRequest\x1a\x19.buffer.CacheableResponse\"\x00\x62\x06proto3')
+DESCRIPTOR = _descriptor_pool.Default().AddSerializedFile(b'\n\x0c\x62uffer.proto\x12\x06\x62uffer\"%\n\x10\x43\x61\x63heableRequest\x12\x11\n\tbuffer_id\x18\x01 \x01(\t\"S\n\x11\x43\x61\x63heableResponse\x12\x10\n\x03msg\x18\x02 \x01(\tH\x00\x88\x01\x01\x12\x16\n\tcacheable\x18\x03 \x01(\x08H\x01\x88\x01\x01\x42\x06\n\x04_msgB\x0c\n\n_cacheable\"#\n\x0e\x41\x64\x64ressRequest\x12\x11\n\tbuffer_id\x18\x01 \x01(\t\"M\n\x0f\x41\x64\x64ressResponse\x12\x10\n\x03msg\x18\x02 \x01(\tH\x00\x88\x01\x01\x12\x14\n\x07\x61\x64\x64ress\x18\x03 \x01(\x04H\x01\x88\x01\x01\x42\x06\n\x04_msgB\n\n\x08_address\"&\n\x11InvalidateRequest\x12\x11\n\tbuffer_id\x18\x01 \x01(\t\".\n\x12InvalidateResponse\x12\x10\n\x03msg\x18\x02 \x01(\tH\x00\x88\x01\x01\x42\x06\n\x04_msg\"!\n\x0c\x46lushRequest\x12\x11\n\tbuffer_id\x18\x01 \x01(\t\")\n\rFlushResponse\x12\x10\n\x03msg\x18\x02 \x01(\tH\x00\x88\x01\x01\x42\x06\n\x04_msg\"N\n\x0f\x41llocateRequest\x12\x0c\n\x04size\x18\x01 \x01(\x05\x12\r\n\x05\x64type\x18\x02 \x01(\t\x12\x11\n\tcacheable\x18\x03 \x01(\x08\x12\x0b\n\x03idx\x18\x04 \x01(\r\"&\n\x11LoadXclbinRequest\x12\x11\n\tfile_path\x18\x01 \x01(\t\".\n\x12LoadXclbinResponse\x12\x10\n\x03msg\x18\x02 \x01(\tH\x00\x88\x01\x01\x42\x06\n\x04_msg\"R\n\x10\x41llocateResponse\x12\x10\n\x03msg\x18\x02 \x01(\tH\x00\x88\x01\x01\x12\x16\n\tbuffer_id\x18\x03 \x01(\tH\x01\x88\x01\x01\x42\x06\n\x04_msgB\x0c\n\n_buffer_id\"Q\n\x12\x42ufferWriteRequest\x12\x11\n\tbuffer_id\x18\x01 \x01(\t\x12\x0c\n\x04\x64\x61ta\x18\x02 \x01(\x0c\x12\r\n\x05start\x18\x03 \x01(\x05\x12\x0b\n\x03\x65nd\x18\x04 \x01(\x05\"/\n\x13\x42ufferWriteResponse\x12\x10\n\x03msg\x18\x02 \x01(\tH\x00\x88\x01\x01\x42\x06\n\x04_msg\"B\n\x11\x42ufferReadRequest\x12\x11\n\tbuffer_id\x18\x01 \x01(\t\x12\r\n\x05start\x18\x02 \x01(\x05\x12\x0b\n\x03\x65nd\x18\x03 \x01(\x05\"J\n\x12\x42ufferReadResponse\x12\x10\n\x03msg\x18\x02 \x01(\tH\x00\x88\x01\x01\x12\x11\n\x04\x64\x61ta\x18\x03 \x01(\x0cH\x01\x88\x01\x01\x42\x06\n\x04_msgB\x07\n\x05_data\"&\n\x11\x46reeBufferRequest\x12\x11\n\tbuffer_id\x18\x01 \x01(\t\".\n\x12\x46reeBufferResponse\x12\x10\n\x03msg\x18\x02 \x01(\tH\x00\x88\x01\x01\x42\x06\n\x04_msg2\xb7\x05\n\x0cRemoteBuffer\x12?\n\x08\x61llocate\x12\x17.buffer.AllocateRequest\x1a\x18.buffer.AllocateResponse\"\x00\x12\x44\n\x05write\x12\x1a.buffer.BufferWriteRequest\x1a\x1b.buffer.BufferWriteResponse\"\x00(\x01\x12\x41\n\x04read\x12\x19.buffer.BufferReadRequest\x1a\x1a.buffer.BufferReadResponse\"\x00\x30\x01\x12\x45\n\nfreebuffer\x12\x19.buffer.FreeBufferRequest\x1a\x1a.buffer.FreeBufferResponse\"\x00\x12\x36\n\x05\x66lush\x12\x14.buffer.FlushRequest\x1a\x15.buffer.FlushResponse\"\x00\x12\x45\n\ninvalidate\x12\x19.buffer.InvalidateRequest\x1a\x1a.buffer.InvalidateResponse\"\x00\x12\x45\n\x10physical_address\x12\x16.buffer.AddressRequest\x1a\x17.buffer.AddressResponse\"\x00\x12\x44\n\x0fvirtual_address\x12\x16.buffer.AddressRequest\x1a\x17.buffer.AddressResponse\"\x00\x12\x42\n\tcacheable\x12\x18.buffer.CacheableRequest\x1a\x19.buffer.CacheableResponse\"\x00\x12\x46\n\x0bload_xclbin\x12\x19.buffer.LoadXclbinRequest\x1a\x1a.buffer.LoadXclbinResponse\"\x00\x62\x06proto3')
 
 _globals = globals()
 _builder.BuildMessageAndEnumDescriptors(DESCRIPTOR, _globals)
@@ -38,21 +38,25 @@ if not _descriptor._USE_C_DESCRIPTORS:
   _globals['_FLUSHRESPONSE']._serialized_start=387
   _globals['_FLUSHRESPONSE']._serialized_end=428
   _globals['_ALLOCATEREQUEST']._serialized_start=430
-  _globals['_ALLOCATEREQUEST']._serialized_end=495
-  _globals['_ALLOCATERESPONSE']._serialized_start=497
-  _globals['_ALLOCATERESPONSE']._serialized_end=579
-  _globals['_BUFFERWRITEREQUEST']._serialized_start=581
-  _globals['_BUFFERWRITEREQUEST']._serialized_end=662
-  _globals['_BUFFERWRITERESPONSE']._serialized_start=664
-  _globals['_BUFFERWRITERESPONSE']._serialized_end=711
-  _globals['_BUFFERREADREQUEST']._serialized_start=713
-  _globals['_BUFFERREADREQUEST']._serialized_end=779
-  _globals['_BUFFERREADRESPONSE']._serialized_start=781
-  _globals['_BUFFERREADRESPONSE']._serialized_end=855
-  _globals['_FREEBUFFERREQUEST']._serialized_start=857
-  _globals['_FREEBUFFERREQUEST']._serialized_end=895
-  _globals['_FREEBUFFERRESPONSE']._serialized_start=897
-  _globals['_FREEBUFFERRESPONSE']._serialized_end=943
-  _globals['_REMOTEBUFFER']._serialized_start=946
-  _globals['_REMOTEBUFFER']._serialized_end=1569
+  _globals['_ALLOCATEREQUEST']._serialized_end=508
+  _globals['_LOADXCLBINREQUEST']._serialized_start=510
+  _globals['_LOADXCLBINREQUEST']._serialized_end=548
+  _globals['_LOADXCLBINRESPONSE']._serialized_start=550
+  _globals['_LOADXCLBINRESPONSE']._serialized_end=596
+  _globals['_ALLOCATERESPONSE']._serialized_start=598
+  _globals['_ALLOCATERESPONSE']._serialized_end=680
+  _globals['_BUFFERWRITEREQUEST']._serialized_start=682
+  _globals['_BUFFERWRITEREQUEST']._serialized_end=763
+  _globals['_BUFFERWRITERESPONSE']._serialized_start=765
+  _globals['_BUFFERWRITERESPONSE']._serialized_end=812
+  _globals['_BUFFERREADREQUEST']._serialized_start=814
+  _globals['_BUFFERREADREQUEST']._serialized_end=880
+  _globals['_BUFFERREADRESPONSE']._serialized_start=882
+  _globals['_BUFFERREADRESPONSE']._serialized_end=956
+  _globals['_FREEBUFFERREQUEST']._serialized_start=958
+  _globals['_FREEBUFFERREQUEST']._serialized_end=996
+  _globals['_FREEBUFFERRESPONSE']._serialized_start=998
+  _globals['_FREEBUFFERRESPONSE']._serialized_end=1044
+  _globals['_REMOTEBUFFER']._serialized_start=1047
+  _globals['_REMOTEBUFFER']._serialized_end=1742
 # @@protoc_insertion_point(module_scope)

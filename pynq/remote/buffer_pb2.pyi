@@ -57,14 +57,28 @@ class FlushResponse(_message.Message):
     def __init__(self, msg: _Optional[str] = ...) -> None: ...
 
 class AllocateRequest(_message.Message):
-    __slots__ = ("size", "dtype", "cacheable")
+    __slots__ = ("size", "dtype", "cacheable", "idx")
     SIZE_FIELD_NUMBER: _ClassVar[int]
     DTYPE_FIELD_NUMBER: _ClassVar[int]
     CACHEABLE_FIELD_NUMBER: _ClassVar[int]
+    IDX_FIELD_NUMBER: _ClassVar[int]
     size: int
     dtype: str
     cacheable: bool
-    def __init__(self, size: _Optional[int] = ..., dtype: _Optional[str] = ..., cacheable: bool = ...) -> None: ...
+    idx: int
+    def __init__(self, size: _Optional[int] = ..., dtype: _Optional[str] = ..., cacheable: bool = ..., idx: _Optional[int] = ...) -> None: ...
+
+class LoadXclbinRequest(_message.Message):
+    __slots__ = ("file_path",)
+    FILE_PATH_FIELD_NUMBER: _ClassVar[int]
+    file_path: str
+    def __init__(self, file_path: _Optional[str] = ...) -> None: ...
+
+class LoadXclbinResponse(_message.Message):
+    __slots__ = ("msg",)
+    MSG_FIELD_NUMBER: _ClassVar[int]
+    msg: str
+    def __init__(self, msg: _Optional[str] = ...) -> None: ...
 
 class AllocateResponse(_message.Message):
     __slots__ = ("msg", "buffer_id")
