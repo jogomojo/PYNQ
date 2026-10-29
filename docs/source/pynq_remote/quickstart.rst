@@ -74,32 +74,13 @@ Install the required dependencies in your Python virtual environment:
 
    pip install jupyterlab matplotlib pillow wheel
 
-Install the PYNQ-HelloWorld overlay. Set the ``BOARD`` environment variable
-before installation so that PYNQ-Utils knows which board you are targeting:
-
-**Windows:**
+Install the overlay and its notebooks:
 
 .. code-block:: bash
 
-   # PowerShell:
-   $env:BOARD="ZCU104"; pip install --no-build-isolation pynq-helloworld
+   pynq install pynq-helloworld --board ZCU104
 
-   # Command Prompt:
-   set BOARD=ZCU104 && pip install --no-build-isolation pynq-helloworld
-
-**Linux/macOS:**
-
-.. code-block:: bash
-
-   BOARD=ZCU104 pip install --no-build-isolation pynq-helloworld
-
-Download the notebooks and overlay files:
-
-.. code-block:: bash
-
-   pynq get-notebooks pynq-helloworld -d ZCU104
-
-The ``-d`` argument tells ``pynq get-notebooks`` which board package to use.
+The notebooks are installed in ``pynq-notebooks/ZCU104/pynq-helloworld``.
 
 Start Jupyter Lab:
 
@@ -136,29 +117,15 @@ and resize images completely remotely using PYNQ.remote.
 Installing Overlays for Several Boards
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 
-``pip install`` followed by ``pynq get-notebooks`` installs an overlay for one
-board, and installing it again for another board replaces the first. To keep
-the boards side by side, install with ``pynq install`` and name each board:
+Run ``pynq install`` for each board type. For example:
 
 .. code-block:: bash
 
-   pynq install https://github.com/strath-sdr/rfsoc_qpsk/releases/download/v1.5.0/rfsoc_qpsk.tar.gz --board RFSoC4x2
-   pynq install https://github.com/strath-sdr/rfsoc_qpsk/releases/download/v1.5.0/rfsoc_qpsk.tar.gz --board ZCU208
+   pynq install <overlay-package> --board RFSoC4x2
+   pynq install <overlay-package> --board ZCU208
 
-Each run installs the package for that board and delivers its notebooks to
-``pynq-notebooks/<BOARD>/rfsoc_qpsk``. The bitstreams of both boards are kept
-in the one installed package, so a single installation serves both board types.
+Use a package that supports both boards. Each board gets its own notebooks
+folder under ``pynq-notebooks/<BOARD>/``.
 
-``pynq install`` also replaces the ``pip install`` and ``pynq get-notebooks``
-commands above. For the ZCU104:
-
-.. code-block:: bash
-
-   pynq install pynq-helloworld --board ZCU104
-
-This delivers the notebooks and the overlay files to
-``pynq-notebooks/ZCU104/pynq-helloworld``.
-
-Spell the board name as the board reports it. See :ref:`multi-board-packaging`
-for how to package an overlay for several boards, and :ref:`remote_device` for
-using several boards in one session.
+See :ref:`pynq-cli` for install options and :ref:`remote_device` for using
+several remote boards in one Python session.

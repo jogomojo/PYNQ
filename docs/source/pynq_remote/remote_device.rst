@@ -26,8 +26,8 @@ When ``PYNQ_REMOTE_DEVICES`` is set, ``Device.devices`` lists one
 
 ``RemoteDevice`` returns a subclass that matches the board's SoC:
 ``RemoteZynqDevice``, ``RemoteZynqUltrascaleDevice`` or ``RemoteVersalDevice``.
-Local devices share the same architecture classes from
-:mod:`pynq.pl_server.arch`, so ``isinstance(dev, VersalArch)`` works for both.
+Local and remote devices share the architecture classes in
+:mod:`pynq.pl_server.arch`.
 
 Device tree overlays (``.dtbo``) shipped with a bitstream are applied on the
 board. This needs a remote image built with the matching ``pynq-remote``
@@ -35,14 +35,11 @@ server; an older server reports that the remote image must be updated.
 
 The ``RemoteDevice`` class is complemented by ``PYNQ.cpp`` which operates on the target device, providing a C++ implementation of the PYNQ API. For more details on the C++ implementation, see the :ref:`cppindex` module documentation.
 
-Several Boards in One Session
------------------------------
+Several Remote Boards in One Session
+------------------------------------
 
-List every address in ``PYNQ_REMOTE_DEVICES`` and create one ``Overlay`` per
-board, passing the board with ``device``. ``pynq.Device.devices`` holds one
-``RemoteDevice`` per address, in order, and ``RemoteDevice(index, ip)`` creates
-one directly. Set ``PYNQ_REMOTE_DEVICES`` before ``import pynq`` in both cases,
-because that is what puts ``pynq`` in remote mode.
+On a PYNQ.remote host, list the board addresses before importing ``pynq``.
+Create an overlay for each board using its ``device``:
 
 .. code-block:: python
 
@@ -55,68 +52,31 @@ because that is what puts ``pynq`` in remote mode.
    overlay_a = pynq.Overlay("design_a.bit", device=a)
    overlay_b = pynq.Overlay("design_b.bit", device=b)
 
-   mmio = pynq.MMIO(0xA0000000, 0x1000, device=a)
    buffer = pynq.allocate(1024, target=b)
 
-Standalone objects name their board the same way: ``MMIO``, ``Register``,
-``GPIO`` and ``Interrupt`` take ``device`` and ``allocate`` takes ``target``. Without them, they
-use the active device (``pynq.Device.active_device``, the first board unless
-you set it), which suits a single board only.
+``Device.devices`` follows the address order. Each overlay keeps using its
+selected board even if ``Device.active_device`` changes.
 
-``from pynq import GPIO, Interrupt`` exports the same public classes whether
-or not ``PYNQ_REMOTE_DEVICES`` is set. The target device selects the local or
-remote implementation when an object is constructed. Existing objects retain
-their target when the active device changes. GPIO lookup methods also accept
-``device``:
+Pass ``device`` to standalone ``MMIO``, ``Register`` and ``GPIO`` objects,
+and ``target`` to ``allocate``. Without an explicit target, these use
+``Device.active_device``. GPIO lookup also accepts ``device``:
 
 .. code-block:: python
 
    pin = pynq.GPIO.get_gpio_pin(0, device=a)
    output = pynq.GPIO(pin, "out", device=a)
-   irq = pynq.Interrupt("my_ip/interrupt", device=a)
 
-Local GPIO wrappers share the local pin implementation. Remote GPIO wrappers
-share a handle for the same pin and device instance; different device instances
-have separate caches. As with local GPIO, releasing a shared pin unexports it
-for the other wrappers too. Independent clients are not coordinated by this
-Python cache.
+Releasing a GPIO also releases other handles sharing that pin on the same
+device instance. Remote interrupt waiting is not supported.
 
-Local interrupt controllers and UIO handles are cached per device. Interrupt
-objects check their own device's overlay timestamp when waiting, so changing
-another device's overlay does not invalidate them. Reloading an overlay while
-a wait is already pending remains unsupported. Remote interrupt waiting is
-still unimplemented and raises ``RuntimeError``.
+Some class-level interfaces select a board differently:
 
-Some lookups name no board. They are single-board conveniences and follow one
-board:
-
-``xrfclk``
-   ``xrfclk`` calls without ``device`` act on the board of the most recently
-   created overlay (on the active device before the first one).
-
-``Clocks``
-   The class-level ``Clocks`` acts on the board of the last overlay that was
-   created or downloaded, and ``Clocks.set_device(device)`` selects another
-   board. Each overlay programs the PL clocks of its own board when it is
-   downloaded.
-
-``PL``
-   The class-level ``PL`` always describes ``pynq.Device.active_device``,
-   whichever board the latest overlay was created on.
-
-For several boards, keep one ``Overlay(..., device=dev)`` per board, read
-``overlay.ip_dict`` rather than ``PL.ip_dict``, and pass ``device`` or
-``target`` to every standalone ``MMIO``, ``Register``, ``GPIO`` and
-``allocate``.
-
-``pynq`` keeps the state of each remote board separately, in the
-``pynq/pl_server`` folder of the installed package:
-``global_pl_state_<ip>_<port>.json`` and ``_current_metadata_<ip>_<port>.pkl``,
-where ``<port>`` is 7967 for the boards in ``PYNQ_REMOTE_DEVICES`` and any
-character of ``<ip>`` other than a letter, digit, ``.``, ``-`` or ``_`` is
-replaced by ``_``. Boards of the same type at different addresses have
-separate files, and downloading an overlay to one board never rewrites the
-files of another.
+* ``Clocks`` uses the board of the last overlay created or downloaded.
+  Use ``Clocks.set_device(device)`` to select a board explicitly.
+* Remote ``xrfclk`` calls accept ``device``. Without it, they use the most
+  recently created overlay's board, or the active device before the first overlay.
+* ``PL`` describes ``Device.active_device``. Use ``overlay.ip_dict`` to inspect
+  a particular overlay.
 
 API Reference
 -------------

@@ -49,7 +49,6 @@ detail. Hardware design will be familiar to Zynq, and FPGA hardware developers.
    overlay_design_methodology/python_overlay_api
    overlay_design_methodology/pynq_utils
    overlay_design_methodology/python_packaging
-   overlay_design_methodology/multi_board_packaging
    overlay_design_methodology/partial_reconfiguration.rst
 
    

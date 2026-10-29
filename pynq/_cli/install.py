@@ -209,6 +209,11 @@ def main(argv=None):
     if board in ("", ".", "..") or os.path.basename(board) != board:
         parser.error(f"invalid board name: {board!r}")
     logger = get_logger(force_lvl=True)
+    if ON_TARGET and args.board is not None:
+        logger.warning(
+            "Installing in remote mode because --board was specified. "
+            "Omit --board to install for this board locally."
+        )
     try:
         installer = _installer()
     except RuntimeError as e:
