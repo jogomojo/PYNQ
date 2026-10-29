@@ -132,3 +132,33 @@ imports cell before ``from pynq import allocate, Overlay``.
 
 Once this change is made, you should be able to run through the entire notebook
 and resize images completely remotely using PYNQ.remote.
+
+Installing Overlays for Several Boards
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+
+``pip install`` followed by ``pynq get-notebooks`` installs an overlay for one
+board, and installing it again for another board replaces the first. To keep
+the boards side by side, install with ``pynq install`` and name each board:
+
+.. code-block:: bash
+
+   pynq install https://github.com/strath-sdr/rfsoc_qpsk/releases/download/v1.5.0/rfsoc_qpsk.tar.gz --board RFSoC4x2
+   pynq install https://github.com/strath-sdr/rfsoc_qpsk/releases/download/v1.5.0/rfsoc_qpsk.tar.gz --board ZCU208
+
+Each run installs the package for that board and delivers its notebooks to
+``pynq-notebooks/<BOARD>/rfsoc_qpsk``. The bitstreams of both boards are kept
+in the one installed package, so a single installation serves both board types.
+
+``pynq install`` also replaces the ``pip install`` and ``pynq get-notebooks``
+commands above. For the ZCU104:
+
+.. code-block:: bash
+
+   pynq install pynq-helloworld --board ZCU104
+
+This delivers the notebooks and the overlay files to
+``pynq-notebooks/ZCU104/pynq-helloworld``.
+
+Spell the board name as the board reports it. See :ref:`multi-board-packaging`
+for how to package an overlay for several boards, and :ref:`remote_device` for
+using several boards in one session.

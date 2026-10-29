@@ -3,7 +3,8 @@
 Setting Environment Variables
 =============================
 
-PYNQ.remote uses two environment variables on the host.
+PYNQ.remote uses two environment variables on the host. Overlay installation
+also uses ``BOARD``.
 
 ``PYNQ_REMOTE``
    Set to ``1`` when installing the ``pynq`` package with pip. This selects the
@@ -13,6 +14,13 @@ PYNQ.remote uses two environment variables on the host.
    Set before ``import pynq`` to identify target boards. The value is a
    comma-separated list of IP addresses. When multiple addresses are listed,
    each becomes a separate ``RemoteDevice`` instance.
+
+``BOARD``
+   Names the target board when installing overlay packages. Set it yourself
+   when installing an overlay package with ``pip``; ``pynq install`` sets it
+   in the installation subprocess. Creating a remote ``Overlay`` does not
+   change it. Runtime overlay code should use ``self.device.name`` to identify
+   its board.
 
 Installing for PYNQ.remote
 --------------------------

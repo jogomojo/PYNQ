@@ -144,3 +144,47 @@ be listed by printing the help message:
     pynq-get-notebooks --help
 
 Please refer to the help message for more info about these options.
+
+Installing Overlay Packages per Board
+^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+
+The ``pynq install`` command installs a Python package that contains overlays
+for one board and keeps the files of each board apart, so that one installation
+can serve several board types. It supports both local installation on a PYNQ
+board and installation on a PYNQ.remote host.
+
+.. code:: bash
+
+    pynq install <requirement> [--board <BOARD>] [--path <path>] [--force]
+
+``<requirement>`` is anything ``pip`` accepts: a package name, the URL of a
+release tarball, a ``git+https://`` URL of a git repository, or a local path.
+The command installs with ``pip``, or with ``uv pip`` if the Python environment
+has no ``pip``.
+
+``-b BOARD``, ``--board BOARD``
+    Select a remote installation target, spelled as ``Device.name`` reports it,
+    for example ``ZCU104`` or ``RFSoC4x2``. Required on a host. On a PYNQ board,
+    omit this option to install for the local board. Supplying it explicitly
+    uses remote-install behaviour even when running on a board.
+
+``-p PATH``, ``--path PATH``
+    For remote installs, notebooks go to ``<path>/<BOARD>/``, with
+    ``./pynq-notebooks`` as the default path. Local installs use the path
+    directly and default to ``PYNQ_JUPYTER_NOTEBOOKS``, or ``./pynq-notebooks``
+    if that variable is unset.
+
+``-f``, ``--force``
+    Deliver the notebooks again if they are already delivered.
+
+For example
+
+.. code:: bash
+
+    pynq install pynq-helloworld --board ZCU104
+
+delivers the notebooks and the ZCU104 overlay files of PYNQ-HelloWorld to
+``pynq-notebooks/ZCU104/pynq-helloworld``. Running the command again with
+another ``--board`` adds that board: each board gets its own notebooks folder,
+and the bitstreams that the package ships are kept per board in the installed
+package. See :ref:`multi-board-packaging` for a packaging example.
